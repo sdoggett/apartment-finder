@@ -18,3 +18,5 @@ if __name__ == "__main__":
         else:
             print("{}: Successfully finished scraping".format(time.ctime()))
         time.sleep(settings.SLEEP_INTERVAL)
+
+print('x')
