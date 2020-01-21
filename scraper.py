@@ -1,10 +1,10 @@
 from craigslist import CraigslistHousing
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, DateTime, Float, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, Float
 from sqlalchemy.orm import sessionmaker
 from dateutil.parser import parse
-from util import post_listing_to_slack, find_points_of_interest
+from util import find_points_of_interest
 import time
 import settings
 
@@ -124,3 +124,22 @@ def do_scrape():
     
     for result in all_results:
        print(result)
+
+
+##test
+cl_h = CraigslistHousing(site=settings.CRAIGSLIST_SITE, area='eby', category=settings.CRAIGSLIST_HOUSING_SECTION,
+                         filters={'max_price': settings.MAX_PRICE, "min_price": settings.MIN_PRICE,'laundry':settings.LAUNDRY})      
+results = []
+
+
+
+
+gen = cl_h.get_results(sort_by='newest', geotagged=True,include_details=True, limit=20)
+while True:
+    try:
+        result = next(gen)
+    except StopIteration:
+        break
+    except Exception:
+        continue
+    listing = session.query(Listing).filter_by(cl_id=result["id"]).first()
