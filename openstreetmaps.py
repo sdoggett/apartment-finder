@@ -45,4 +45,36 @@ for y in output:
 
 #"highway"="bus_stop"
 #route_ref
+    
+#"network" = "BART"
+
+query = overpassQueryBuilder(area=areaId, 
+                             elementType='node', 
+                             selector=['"network" = "BART"','"railway"="station"'], 
+                             includeGeometry=True,
+                             out='body')
+
+result = overpass.query(query)
+print('number of BART stations (nodes):  %s' % result.countElements())
+
+result.elements()[0].geometry()
+
+output = {}
+for x in result.elements():
+
+    
+    nodeID = x.id()
+    shopName = x.tag('name')
+    coord = [x.lat(),x.lon()]
+    
+    output[nodeID] = [shopName, coord]
+    
+for y in output:
+    print(output[y][0])
+    print(output[y][1])
+    print("")
+    
+
+
+
 
