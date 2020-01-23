@@ -84,5 +84,18 @@ def get_BART(overpass,areaId):
 
 
 
+import geopandas as gpd
+import osmnx as ox
+ox.config(log_console=True, use_cache=True)
+ox.__version__
+
+# define a point at the corner of California St and Mason St in SF
+location_point = (37.791427, -122.410018)
+
+# same point again, but create network only of nodes within 500m along the network from point
+G3 = ox.graph_from_point(location_point, distance=500, distance_type='network',network_type='walk')
+fig, ax = ox.plot_graph(G3)
+
+
 
 
