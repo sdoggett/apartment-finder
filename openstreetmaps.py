@@ -86,16 +86,27 @@ def get_BART(overpass,areaId):
 
 import geopandas as gpd
 import osmnx as ox
+import networkx as nx
 ox.config(log_console=True, use_cache=True)
 ox.__version__
 
-# define a point at the corner of California St and Mason St in SF
-location_point = (37.791427, -122.410018)
+
+location_point = (37.829617, -122.278865)
+
+dest = (37.829405, -122.280013)
 
 # same point again, but create network only of nodes within 500m along the network from point
 G3 = ox.graph_from_point(location_point, distance=500, distance_type='network',network_type='walk')
 fig, ax = ox.plot_graph(G3)
 
+origin_node = ox.get_nearest_node(G3, location_point)
+dest_node = ox.get_nearest_node(G3, dest)
 
+G_projected = ox.project_graph(G3)
+nc = ['r' if (node==origin_node or node==dest_node) else '#336699' for node in G_projected.nodes()]
+ns = [50 if (node==origin_node or node==dest_node) else 8 for node in G_projected.nodes()]
+fig, ax = ox.plot_graph(G_projected, node_size=ns, node_color=nc, node_zorder=2)
 
-
+route = nx.shortest_path(G_projected, origin_node, dest_node, weight='length')
+fig, ax = ox.plot_graph_route(G_projected, route, node_size=0)
+l =nx.shortest_path_length(G_projected, origin_node, dest_node, weight='length')
