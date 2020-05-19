@@ -73,6 +73,7 @@ BOXES = {
         [37.77805, -122.43959],
         [37.78829, -122.47151],
     ]
+
 }
 
 # A list of neighborhood names to look for in the Craigslist neighborhood name field. If a listing doesn't fall into
@@ -83,7 +84,7 @@ NEIGHBORHOODS = ["berkeley north", "berkeley", "rockridge", "adams point", "oakl
 
 ## Transit preferences
 
-# The farthest you want to live from a transit stop.
+'''# The farthest you want to live from a transit stop.
 MAX_TRANSIT_DIST = 2 # kilometers
 
 # Transit stations you want to check against.  Every coordinate here will be checked against each listing,
@@ -94,7 +95,7 @@ TRANSIT_STATIONS = {
     "rockridge_bart": [37.841286,-122.2566329],
     "downtown_berkeley_bart": [37.8629541,-122.276594],
     "north_berkeley_bart": [37.8713411,-122.2849758]
-}
+}'''
 
 ## Search type preferences
 

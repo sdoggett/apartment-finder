@@ -1,5 +1,7 @@
 import settings
 import math
+import openstreetmaps as osm
+from OSMPythonTools.overpass import Overpass
 
 def coord_distance(lat1, lon1, lat2, lon2):
     """
@@ -29,17 +31,6 @@ def in_box(coords, box):
         return True
     return False
 
-def post_listing_to_slack(sc, listing):
-    """
-    Posts the listing to slack.
-    :param sc: A slack client.
-    :param listing: A record of the listing.
-    """
-    desc = "{0} | {1} | {2} | {3} | <{4}>".format(listing["area"], listing["price"], listing["bart_dist"], listing["name"], listing["url"])
-    sc.api_call(
-        "chat.postMessage", channel=settings.SLACK_CHANNEL, text=desc,
-        username='pybot', icon_emoji=':robot_face:'
-    )
 
 def find_points_of_interest(geotag, location):
     """
@@ -52,24 +43,120 @@ def find_points_of_interest(geotag, location):
     area_found = False
     area = ""
     min_dist = None
-    near_bart = False
-    bart_dist = "N/A"
-    bart = ""
+
+    num_supermarkets_in_area = 0
+    closest_supermarket = "N/A"
+    near_supermarket = False
+    closest_supermarket_dist = 'N/A'
+    
+    num_convenience_stores_in_area = 0
+    closest_convenience_store = "N/A"
+    near_convenience_store = False
+    closest_convenience_store_dist = 'N/A'
+
+    num_pharmacys_in_area = 0
+    closest_pharmacy = "N/A"
+    near_pharmacy = False
+    closest_pharmacy_dist = 'N/A'
+    
+    num_BART_in_area = 0
+    closest_BART = "N/A"
+    near_BART = False
+    closest_BART_dist = 'N/A'
+    
+    num_of_bus_stops_in_area = 0
+    near_Transbay_stop = False
+    nearby_routes = []
+    
     # Look to see if the listing is in any of the neighborhood boxes we defined.
     for a, coords in settings.BOXES.items():
         if in_box(geotag, coords):
             area = a
             area_found = True
 
-    # Check to see if the listing is near any transit stations.
-    for station, coords in settings.TRANSIT_STATIONS.items():
-        dist = coord_distance(coords[0], coords[1], geotag[0], geotag[1])
-        if (min_dist is None or dist < min_dist) and dist < settings.MAX_TRANSIT_DIST:
-            bart = station
-            near_bart = True
-
+    #Create a bbox around the listing
+    distance = 1 #km
+    bbox = osm.generate_bbox_around_point(geotag, distance)
+    overpass = Overpass()
+    dict_of_nearby_supermarkets = osm.get_supermarkets(overpass,bbox)
+    num_supermarkets_in_area = len(dict_of_nearby_supermarkets) 
+    for node, info in dict_of_nearby_supermarkets.items():
+        name = info[0]
+        lat = info[1][0]
+        long = info[1][1]
+        dist = coord_distance(lat, long, geotag[0], geotag[1])
         if (min_dist is None or dist < min_dist):
-            bart_dist = dist
+            min_dist = dist
+            closest_supermarket = name
+            near_supermarket = True
+            closest_supermarket_dist = dist
+        
+
+    dict_of_nearby_convenience_stores = osm.get_convenience_store(overpass,bbox)
+    num_convenience_stores_in_area = len(dict_of_nearby_convenience_stores) 
+    for node, info in dict_of_nearby_convenience_stores.items():
+        name = info[0]
+        lat = info[1][0]
+        long = info[1][1]
+        dist = coord_distance(lat, long, geotag[0], geotag[1])
+        if (min_dist is None or dist < min_dist):
+            min_dist = dist
+            closest_convenience_store = name
+            near_convenience_store = True
+            closest_convenience_store_dist = dist    
+    
+    dict_of_nearby_pharmacys = osm.get_pharmacy(overpass,bbox)
+    num_pharmacys_in_area = len(dict_of_nearby_pharmacys) 
+    for node, info in dict_of_nearby_pharmacys.items():
+        name = info[0]
+        lat = info[1][0]
+        long = info[1][1]
+        dist = coord_distance(lat, long, geotag[0], geotag[1])
+        if (min_dist is None or dist < min_dist):
+            min_dist = dist
+            closest_pharmacy = name
+            near_pharmacy = True
+            closest_pharmacy_dist = dist    
+        
+    
+    
+    dict_of_nearby_BART = osm.get_BART(overpass,bbox)
+    num_BART_in_area = len(dict_of_nearby_BART) 
+    for node, info in dict_of_nearby_BART.items():
+        name = info[0]
+        lat = info[1][0]
+        long = info[1][1]
+        dist = coord_distance(lat, long, geotag[0], geotag[1])
+        if (min_dist is None or dist < min_dist):
+            min_dist = dist
+            closest_BART = name
+            near_BART = True
+            closest_BART_dist = dist   
+    
+    #Is it close to bus stops?
+    Transbay_route_list = ['B','C','CB','E','F','G','H','J','L',
+                           'LA','NL','NX','NX1','NX2','NX3','NX4',
+                           'O','P','S','SB','V','W','Z']
+            
+    dict_of_nearby_bus_stops = osm.get_bus_stops(overpass,bbox)
+    num_of_bus_stops_in_area = len(dict_of_nearby_bus_stops)
+    for node, info in dict_of_nearby_bus_stops.items():
+        name = info[0]
+        routes = info[1]
+        lat = info[2][0]
+        long = info[2][1]
+        if routes != None:
+            list_of_routes_at_stop = routes.split(';')
+            for route in list_of_routes_at_stop:
+                if route in Transbay_route_list:
+                    near_Transbay_stop = True
+                #add to list of nearby routes if not there already
+                if route not in nearby_routes:
+                    nearby_routes.append(route)
+        
+        
+
+    
 
     # If the listing isn't in any of the boxes we defined, check to see if the string description of the neighborhood
     # matches anything in our list of neighborhoods.
@@ -81,7 +168,24 @@ def find_points_of_interest(geotag, location):
     return {
         "area_found": area_found,
         "area": area,
-        "near_bart": near_bart,
-        "bart_dist": bart_dist,
-        "bart": bart
+        "num_BART_in_area": num_BART_in_area,
+        "near_bart": near_BART,
+        "bart_dist": closest_BART_dist,
+        "bart": closest_BART,
+        "num_supermarkets_in_area":num_supermarkets_in_area,
+        'closest_supermarket':closest_supermarket,
+        "near_supermarket":near_supermarket,
+        'closest_supermarket_dist':closest_supermarket_dist,
+        "num_convenience_stores_in_area":num_convenience_stores_in_area,
+        'closest_convenience_store':closest_convenience_store,
+        "near_convenience_store":near_convenience_store,
+        'closest_convenience_store_dist':closest_convenience_store_dist,
+        "num_pharmacys_in_area":num_pharmacys_in_area,
+        'closest_pharmacy':closest_pharmacy,
+        "near_pharmacy":near_pharmacy,
+        'closest_pharmacy_dist':closest_pharmacy_dist,
+        'nearby_bus_routes':nearby_routes,
+        'near_Transbay_stop':near_Transbay_stop,
+        'num_of_bus_stops_in_area':num_of_bus_stops_in_area
+        
     }

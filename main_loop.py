@@ -1,4 +1,4 @@
-from scraper import do_scrape
+from scraper import do_scrape, get_df
 import settings
 import time
 import sys
@@ -8,15 +8,23 @@ if __name__ == "__main__":
     while True:
         print("{}: Starting scrape cycle".format(time.ctime()))
         try:
-            do_scrape()
+            x = do_scrape()
         except KeyboardInterrupt:
             print("Exiting....")
+            
+            df = get_df()
+            df.to_excel(r'C:\Users\sdoggett\Documents\GitHub\apartment-finder\Test\results.xlsx')
             sys.exit(1)
-        except Exception as exc:
+        except Exception:
             print("Error with the scraping:", sys.exc_info()[0])
             traceback.print_exc()
+            sys.exit(1)
         else:
             print("{}: Successfully finished scraping".format(time.ctime()))
-        time.sleep(settings.SLEEP_INTERVAL)
+            df = get_df()
+            df.to_excel(r'C:\Users\sdoggett\Documents\GitHub\apartment-finder\Test\results.xlsx')
+            break
 
-print('x')
+        
+        #time.sleep(settings.SLEEP_INTERVAL)
+

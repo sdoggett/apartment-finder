@@ -1,0 +1,1 @@
+{"version":0.6,"generator":"Overpass API 0.7.56.1004 6cd3eaec","osm3s":{"timestamp_osm_base":"2020-05-18T23:41:02Z","copyright":"The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."},"elements":[{"type":"node","id":3137936329,"lat":37.3286138,"lon":-121.9664502,"tags":{"amenity":"pharmacy","dispensing":"no","name":"CVS"}}]}
